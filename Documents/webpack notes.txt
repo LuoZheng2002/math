@@ -1,0 +1,53 @@
+Build up webpack environment:
+1. Download Node.js from https://nodejs.org
+2. Download typescript using command: npm install -g typescript
+3. Go to the project folder and type commands:
+    tsc --init                     (Initialize typescript environment. A "tsconfig.json" file will be generated)
+    npm init                       (Initialize Nodejs package manager to install the following packages. A "package.json" file will be generated)
+    npm install webpack            (webpack compiler)
+    npm install webpack-cli        (command line interface of webpack)
+    npm install webpack-dev-server (a live server for webpack debugging)
+    npm install ts-loader          (teaches webpack how to compile typescript into javascript)
+    npm install typescript         (need a local copy of typescript compiler even if we have a global one)
+A "node_modules" folder is generated, and all the dependencies are inside it.
+
+4. Change the "module" property in tsconfig.json file to "ES2015"
+
+5. Add a "webpack.config.js" file in the project folder.
+
+const path = require('path');
+module.exports = {
+    devtool: 'eval-source-map',
+    mode: 'none',
+    entry: './src/index.ts',
+    module: {
+        rules: [
+            {
+                test: /\.ts$/,
+                use: 'ts-loader',
+                include: [path.resolve(__dirname, 'src')]
+            }
+        ]
+    },
+    resolve:{
+        extensions: ['.ts', '.js']
+    },
+    output: {
+        publicPath: 'public',
+        filename: 'bundle.js',
+        path: path.resolve(__dirname, 'public')
+    }
+}
+
+6. Add a folder named "public" for html, css and js files, and another folder "src" for typescript files.
+7. Create index.html in "public" folder, and index.js in "src" folder, and write the starter "Hello world" code.
+8. Add the following lines in the "scripts" property in the package.json:
+    "build": "webpack",
+    "serve": "webpack-dev-server",
+
+9. type command: npm run build
+10. Uncomment the "sourceMap" property in tsconfig.json.
+11. run npm run serve
+    ctrl+click the http url to run the server in browser
+    ctrl+C in terminal to stop running
+
