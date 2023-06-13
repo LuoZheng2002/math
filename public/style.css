@@ -1,0 +1,20 @@
+.main-div{
+    font-size: 60px;
+    outline-width: 0px;
+    background-color: brown;
+    padding: 5px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow: scroll;
+}
+.formula{
+    font-size: 60px;
+    background-color: aliceblue;
+    padding: 2px;
+    display: inline-flex;
+    flex-wrap: wrap;
+}
+.text-container{
+    background-color:aqua;
+    margin: 5px;
+}
