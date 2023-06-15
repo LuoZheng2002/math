@@ -36,7 +36,6 @@ export enum CLASS
     FRACTION = 'fraction',
     NUMERATOR = 'numerator',
     DENOMINATOR = 'denominator',
-    FRACTION_LINE = 'fraction-line',
 
     FONT_SIZE_1='font-size-1',
     FONT_SIZE_2='font-size-2',
