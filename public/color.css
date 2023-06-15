@@ -1,0 +1,31 @@
+.main-div-color{
+    background-color: brown;
+}
+.formula-color{
+    background-color: lightgreen;
+}
+.text-container-color{
+    background-color:aliceblue;
+}
+.super-sub-script-color{
+    background-color: magenta;
+}
+.super-script-color{
+    background-color: yellow;
+}
+.sub-script-color{
+    background-color: blue;
+}
+.transparent-color{
+    background-color: transparent;
+}
+
+.fraction-color{
+    background-color: magenta;
+}
+.numerator-color{
+    background-color: yellow;
+}
+.denominator-color{
+    background-color: blue;
+}

@@ -1,7 +1,6 @@
 .main-div{
     font-size: 60px;
     outline-width: 0px;
-    background-color: brown;
     padding: 5px;
     display: flex;
     flex-wrap: wrap;
@@ -9,12 +8,64 @@
 }
 .formula{
     font-size: 60px;
-    background-color: aliceblue;
-    padding: 2px;
+    padding: 5px;
+    margin:3px;
     display: inline-flex;
     flex-wrap: wrap;
 }
 .text-container{
-    background-color:aqua;
-    margin: 5px;
+    padding: 1px;
+    margin-top: auto;
+    margin-bottom: auto;
 }
+.super-sub-script{
+    padding: 1px;
+    margin-top: auto;
+    margin-bottom: auto;
+    display: inline-flexbox;
+}
+.super-script{
+    padding:1px;
+    display: flex;
+    width:min-content;
+}
+.sub-script{
+    padding:1px;
+    display: flex;
+    width:min-content;
+}
+
+.fraction{
+    padding: 1px;
+    margin-top: auto;
+    margin-bottom: auto;
+    display: inline-flexbox;
+    position:relative;
+}
+.numerator{
+    padding:1px;
+    display: flex;
+    width:min-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+.denominator{
+    padding:1px;
+    display: flex;
+    width:min-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+/* .fraction-line{
+    height: 2px;
+    background-color: black;
+    display: flex;
+} */
+.fraction::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    border-top: 2px solid black;
+  }
