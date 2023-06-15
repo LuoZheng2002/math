@@ -8,7 +8,6 @@ export function createFraction(parentSize: SZ)
     let fraction = document.createElement('span');
     let numerator = document.createElement('span');
     let denominator = document.createElement('span');
-    let line = document.createElement('span');
     // assign container attributes
     fraction.setAttribute(ATT.CONTAINER_TYPE, CT.FRACTION);
     numerator.setAttribute(ATT.CONTAINER_TYPE, CT.NUMERATOR);
@@ -22,7 +21,6 @@ export function createFraction(parentSize: SZ)
     fraction.classList.add(CLASS.FRACTION);
     numerator.classList.add(CLASS.NUMERATOR);
     denominator.classList.add(CLASS.DENOMINATOR);
-    line.classList.add(CLASS.FRACTION_LINE);
     // assign size classes
     let sizeClass = getSizeClass(size);
     fraction.classList.add(sizeClass);
@@ -37,7 +35,6 @@ export function createFraction(parentSize: SZ)
     denominator.innerHTML = '&nbsp;';
     // assemble
     fraction.appendChild(numerator);
-    fraction.appendChild(line);
     fraction.appendChild(denominator);
 
     return fraction;
