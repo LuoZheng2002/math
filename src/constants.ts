@@ -14,8 +14,15 @@ export enum CT
     SUBSCRIPT = 'SUBSCRIPT',
 
     FRACTION = 'FRACTION',
+    NUMERATOR_FRAEMWORK = 'NUMERATOR_FRAMEWORK',
+    DENOMINATOR_FRAMEWOKR = 'DENOMINATOR_FRAMEWORK',
     NUMERATOR = 'NUMERATOR',
     DENOMINATOR = 'DENOMINATOR',
+
+    SQRT = 'SQRT',
+    SQRT_HEAD='SQRT_HEAD',
+    SQRT_HEAD_PLACEHOLDER = 'SQRT_HEAD_PLACEHOLDER',
+    SQRT_CONTAINER='SQRT_CONTAINER',
 }
 export enum SZ
 {
@@ -36,6 +43,13 @@ export enum CLASS
     FRACTION = 'fraction',
     NUMERATOR = 'numerator',
     DENOMINATOR = 'denominator',
+    NUMERATOR_FRAEMWORK = 'numerator-framework',
+    DENOMINATOR_FRAMEWORK = 'denominator-framework',
+
+    SQRT = 'sqrt',
+    SQRT_HEAD='sqrt-head',
+    SQRT_HEAD_PLACEHOLDER = 'sqrt-head-placeholder',
+    SQRT_CONTAINER='sqrt-container',
 
     FONT_SIZE_1='font-size-1',
     FONT_SIZE_2='font-size-2',
@@ -52,6 +66,11 @@ export enum CLASS
     COLOR_FRACTION = 'fraction-color',
     COLOR_NUMERATOR = 'numerator-color',
     COLOR_DENOMINATOR = 'denominator-color',
-
+    COLOR_NUMERATOR_FRAMEWORK = 'numerator-framework-color',
+    COLOR_DENOMINATOR_FRAMEWORK = 'denominator-framework-color',
+    COLOR_SQRT = 'sqrt-color',
+    COLOR_SQRT_HEAD = 'sqrt-head-color',
+    COLOR_SQRT_HEAD_PLACEHOLDER = 'sqrt-head-placeholder-color',
+    COLOR_SQRT_CONTAINER = 'sqrt-container-color',
     COLOR_NONE = 'transparent-color'
 }

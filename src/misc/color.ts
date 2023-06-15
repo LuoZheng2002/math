@@ -1,1 +1,1 @@
-export const colorful = false;
+export const colorful = true;

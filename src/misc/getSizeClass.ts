@@ -33,7 +33,7 @@ function numToSize(num: number):SZ
             return SZ.SZ_5;
     }
 }
-export function getSize(size: SZ, offset: number)
+export function getNewSize(size: SZ, offset: number)
 {
     let num = sizeToNum(size);
     let newNum = num - offset;

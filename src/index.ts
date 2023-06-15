@@ -10,6 +10,22 @@ try
     assert(mainDiv != null, 'mainDiv is null');
     mainDiv.addEventListener('beforeinput', handleInput);
     mainDiv.addEventListener('keydown', handleKeydown);
+
+    let button = document.getElementById('button')!;
+    let colorStyleSheet = document.getElementById('colorStyleSheet') as HTMLLinkElement;
+    let hasBackgroundColor = true;
+    button.addEventListener('click', function(event){
+        console.log('Background color toggled!');
+        hasBackgroundColor = !hasBackgroundColor;
+        if (hasBackgroundColor)
+        {
+            colorStyleSheet.href = 'color.css';
+        }
+        else
+        {
+            colorStyleSheet.href = 'no_color.css';
+        }
+    });
 }
 catch(error)
 {

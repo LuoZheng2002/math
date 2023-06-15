@@ -1,7 +1,7 @@
 import { assert } from "../../misc/assert";
 import { getHTMLContainer } from "../../misc/getHTMLContainer";
-import { handleArrowLeft } from "./handleArrowLeft";
-import { handleArrowRight } from "./handleArrowRight";
+import { Direction } from "../../misc/setCursorToContainer";
+import { handleArrow } from "./handleArrow";
 import { handleEnter } from "./handleEnter";
 
 export function handleKeydown(event: KeyboardEvent)
@@ -14,10 +14,10 @@ export function handleKeydown(event: KeyboardEvent)
     switch(event.key)
     {
         case 'ArrowRight':
-            handleArrowRight(range, container, event);
+            handleArrow(range, container, event, Direction.Right);
             break;
         case 'ArrowLeft':
-            handleArrowLeft(range, container, event);
+            handleArrow(range, container, event, Direction.Left);
             break;
         case 'Enter':
             handleEnter(range, container, event);

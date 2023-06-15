@@ -1,6 +1,14 @@
+.button{
+    font-size: 30px;
+    padding: 5px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .main-div{
     font-size: 60px;
-    font-family: 'Times New Roman', Times, serif;
+    font-family:Arial, Helvetica, sans-serif;
     outline-width: 0px;
     padding: 5px;
     display: flex;
@@ -13,6 +21,7 @@
     margin:3px;
     display: inline-flex;
     flex-wrap: wrap;
+    align-items: center;
 }
 .text-container{
     padding: 1px;
@@ -41,7 +50,17 @@
     margin-top: auto;
     margin-bottom: auto;
     display: inline-flexbox;
-    position:relative;
+}
+.numerator-framework{
+    display: flex;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.denominator-framework{
+    border-top: 4px solid black;
+    display: flex;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 .numerator{
     padding:1px;
@@ -57,11 +76,23 @@
     margin-left: auto;
     margin-right: auto;
 }
-.fraction::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    border-top: 3px solid black;
-  }
+.sqrt{
+    display: inline-flex;
+    position: relative;
+}
+.sqrt-head{
+    display: flex;
+    width: 30px;
+    top: 0;
+    bottom: 0;
+    position:absolute;
+}
+.sqrt-head-placeholder{
+    display: flex;
+    width: 30px;
+    height: auto;
+}
+.sqrt-container{
+    display: flex;
+    border-top: 3px black solid;
+}

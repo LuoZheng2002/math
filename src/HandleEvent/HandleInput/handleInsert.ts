@@ -1,10 +1,12 @@
 import { createFormula } from "../../CreateElement/createFormula";
 import { createFraction } from "../../CreateElement/createFraction";
+import { createSqrt } from "../../CreateElement/createSqrt";
 import { createSuperSubScript } from "../../CreateElement/createSuperSubScript";
 import { createTextContainer } from "../../CreateElement/createTextContainer";
 import { splitTextContainer } from "../../CreateElement/splitTextContainer";
 import { ATT, CT, SZ } from "../../constants";
 import { assert } from "../../misc/assert";
+import { getSize, isType } from "../../misc/attributes";
 
 export function handleInsert(range: Range, container: HTMLElement, event: InputEvent)
 {
@@ -12,6 +14,7 @@ export function handleInsert(range: Range, container: HTMLElement, event: InputE
     if (tryHandleSpace(range, container, event)) return;
     if (tryHandleCaretOrUnderscore(range, container, event)) return;
     if (tryHandleSlash(range, container, event)) return;
+    if (tryHandleSqrt(range, container, event)) return;
     tryReplaceWhiteSpace(range, container, event);
 }
 
@@ -34,6 +37,7 @@ function tryReplaceWhiteSpace(range: Range, container: HTMLElement, event: Input
         case CT.SUBSCRIPT:
         case CT.NUMERATOR:
         case CT.DENOMINATOR:
+        case CT.SQRT_CONTAINER:
             {
                 let textContainer = createTextContainer(container.getAttribute(ATT.FONT_SIZE) as SZ);
                 container.innerText = '';
@@ -172,13 +176,37 @@ function tryHandleSlash(range: Range, container: HTMLElement, event: InputEvent)
     container = fraction.previousElementSibling as HTMLElement;
     if (container.innerText.length <= 1)
     {
-        container.innerHTML = '&nbsp;';
+        container.remove();
     }
     else
     {
         container.innerText = container.innerText.substring(0, container.innerText.length-1);
     }
     let targetContainer = fraction.firstElementChild!;
+    range.setStart(targetContainer.firstChild!, 1);
+    range.setEnd(targetContainer.firstChild!, 1);
+    return true;
+}
+function tryHandleSqrt(range: Range, container: HTMLElement, event: InputEvent): boolean
+{
+    if (event.data !='t') return false;
+    if (!isType(container, CT.TEXTCONTAINER)) return false;
+    if (container.innerText.substring(range.startOffset - 3, range.startOffset) != 'sqr') return false;
+    event.preventDefault();
+    console.log('Handle sqrt triggered!');
+    let size = getSize(container.parentElement as HTMLElement);
+    let sqrt = createSqrt(size);
+    normalAndSplitInsert(range, container, sqrt);
+    container = sqrt.previousElementSibling as HTMLElement;
+    if (container.innerText == 'sqr')
+    {
+        container.remove();
+    }
+    else
+    {
+        container.innerText = container.innerText.substring(0, container.innerText.length - 3);
+    }
+    let targetContainer = sqrt.lastElementChild!;
     range.setStart(targetContainer.firstChild!, 1);
     range.setEnd(targetContainer.firstChild!, 1);
     return true;

@@ -21,11 +21,29 @@
 }
 
 .fraction-color{
-    background-color: magenta;
+    background-color: transparent;
 }
 .numerator-color{
     background-color: yellow;
 }
 .denominator-color{
+    background-color: blue;
+}
+.numerator-framework-color{
+    background-color: pink;
+}
+.denominator-framework-color{
+    background-color: pink;
+}
+.sqrt-color{
+    background-color: green;
+}
+.sqrt-head-color{
+    background-color: red;
+}
+.sqrt-head-placeholder-color{
+    background-color: black;
+}
+.sqrt-container-color{
     background-color: blue;
 }

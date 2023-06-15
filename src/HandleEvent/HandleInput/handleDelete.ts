@@ -1,7 +1,8 @@
-import { addSyntheticLeadingComment } from "../../../node_modules/typescript/lib/typescript";
+import { addSyntheticLeadingComment, isTaggedTemplateExpression } from "../../../node_modules/typescript/lib/typescript";
 import { mergeTextContainers } from "../../CreateElement/mergeTextContainers";
 import { ATT, CT } from "../../constants";
 import { assert } from "../../misc/assert";
+import { isType } from "../../misc/attributes";
 import { deleteLastCharacter } from "../../misc/deleteLastCharacter";
 import { Direction, setCursorToContainer } from "../../misc/setCursorToContainer";
 
@@ -10,6 +11,7 @@ export function handleDelete(range: Range, container: HTMLElement, event: InputE
     if (tryDeleteFront(range, container, event)) return;
     if (tryDeleteContainer(range, container, event)) return;
     if (tryCreateWhiteSpace(range, container, event)) return;
+    if (tryDeleteSqrt(range, container, event)) return;
 }
 
 function tryDeleteFront(range: Range, container: HTMLElement, event: InputEvent):boolean
@@ -18,6 +20,12 @@ function tryDeleteFront(range: Range, container: HTMLElement, event: InputEvent)
     let parent = container.parentElement!;
     let hasContainer= false;
     let bigContainer :HTMLElement|null = null;
+    if (isType(parent, CT.SQRT_CONTAINER))
+    {
+        console.log('Prevent deleting sqrt because there is still content');
+        event.preventDefault();
+        return true;
+    }
     if (container.previousElementSibling != null)
     {
         bigContainer = container;
@@ -35,7 +43,7 @@ function tryDeleteFront(range: Range, container: HTMLElement, event: InputEvent)
         return false;
     }
     event.preventDefault();
-    let leftSibling = bigContainer?.previousElementSibling as HTMLElement;
+    let leftSibling = bigContainer!.previousElementSibling as HTMLElement;
     deleteLastCharacter(leftSibling);
     setCursorToContainer(range, leftSibling, Direction.Left);
     console.log('Set cursor to the previos element before deleting');
@@ -91,7 +99,7 @@ function tryDeleteTextContainer(range: Range, container: HTMLElement, event: Inp
     if (container.getAttribute(ATT.CONTAINER_TYPE) != CT.TEXTCONTAINER) return false;
     // if the text container only contains one character, and its parent is formula and has only one child, then delete the container and set the formula to be a white space
     let parent = container.parentElement!;
-    let parentTypes:string[] = [CT.FORMULA, CT.SUPERSCRIPT, CT.SUBSCRIPT];
+    let parentTypes:string[] = [CT.FORMULA, CT.SUPERSCRIPT, CT.SUBSCRIPT, CT.NUMERATOR, CT.DENOMINATOR, CT.SQRT_CONTAINER];
     let isWhiteSpace = container.innerHTML== '&nbsp;';
     let isOnlyChildElement = container.innerText.length == 1
         && parentTypes.includes(parent.getAttribute(ATT.CONTAINER_TYPE)!)
@@ -156,7 +164,7 @@ function tryDeleteSuperSubScript(range: Range, container: HTMLElement, event: In
     return true;
 }
 
-function tryDeleteFraction(range: Range, container: HTMLElement, event: InputEvent)
+function tryDeleteFraction(range: Range, container: HTMLElement, event: InputEvent): boolean
 {
     if (container.innerHTML != '&nbsp;') return false;
     if (container.getAttribute(ATT.CONTAINER_TYPE) == CT.TEXTCONTAINER)
@@ -165,15 +173,31 @@ function tryDeleteFraction(range: Range, container: HTMLElement, event: InputEve
     }
     if (![CT.NUMERATOR, CT.DENOMINATOR].includes(container.getAttribute(ATT.CONTAINER_TYPE) as CT)) return false;
     event.preventDefault();
-    let fraction = container.parentElement!;
-    let numerator = fraction.firstElementChild!;
-    let denominator = fraction.lastElementChild!;
+    let framework = container.parentElement!;
+    assert(isType(framework, CT.NUMERATOR_FRAEMWORK) || isType(framework, CT.DENOMINATOR_FRAMEWOKR), 'The container is supposed to be a framework.');
+    let fraction = framework.parentElement!;
+    assert(isType(fraction, CT.FRACTION), 'The container is supposed to be a fraction.');
+    let numerator = fraction.firstElementChild!.firstElementChild as HTMLElement;
+    assert(isType(numerator, CT.NUMERATOR), 'The container is supposed to be a numerator');
+    let denominator = fraction.lastElementChild!.firstElementChild as HTMLElement;
+    assert(isType(denominator, CT.DENOMINATOR), 'The container is supposed to be a denominator');
     if (numerator.innerHTML !='&nbsp;' || denominator.innerHTML !='&nbsp;')
     {
         console.log('Because either numerator or denominator is not empty, delete is prevented.');
         return false;
     }
     normalAndMergeDelete(range, fraction);
+    return true;
+}
+
+function tryDeleteSqrt(range: Range, container: HTMLElement, event: InputEvent): boolean
+{
+    if (container.innerHTML != '&nbsp;') return false;
+    if (!isType(container, CT.SQRT_CONTAINER)) return false;
+    event.preventDefault();
+    let sqrt = container.parentElement!;
+    assert(isType(sqrt, CT.SQRT), 'Parent should be SQRT');
+    normalAndMergeDelete(range, sqrt);
     return true;
 }
 
@@ -215,5 +239,4 @@ function normalAndMergeDelete(range: Range, container: HTMLElement)
         createWhiteSpaceForParent(range, parent);
     }
     console.log('Removed a container.');
-
 }

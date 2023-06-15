@@ -1,6 +1,6 @@
 import { ATT, CLASS, CT, SZ } from "../constants";
 import { colorful } from "../misc/color";
-import { getSize, getSizeClass } from "../misc/getSizeClass";
+import { getNewSize, getSizeClass } from "../misc/getSizeClass";
 
 export function createSuperSubScript(parentSize: SZ)
 {
@@ -13,7 +13,7 @@ export function createSuperSubScript(parentSize: SZ)
     superScript.setAttribute(ATT.CONTAINER_TYPE, CT.SUPERSCRIPT);
     subScript.setAttribute(ATT.CONTAINER_TYPE, CT.SUBSCRIPT);
     // assign size attributes
-    let size = getSize(parentSize,2);
+    let size = getNewSize(parentSize,2);
     superSubScript.setAttribute(ATT.FONT_SIZE, size);
     superScript.setAttribute(ATT.FONT_SIZE, size);
     subScript.setAttribute(ATT.FONT_SIZE, size);
