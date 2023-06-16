@@ -1,5 +1,8 @@
+import { createCursorAnchor } from "../../CreateElement/createCursorAnchor";
+import { DummyTag, createDummyParenthesis } from "../../CreateElement/createDummyParenthesis";
 import { createFormula } from "../../CreateElement/createFormula";
 import { createFraction } from "../../CreateElement/createFraction";
+import { ParenthesisType, createParentheses, getParenthesesContainer, hasParenthesis } from "../../CreateElement/createParentheses";
 import { createSqrt } from "../../CreateElement/createSqrt";
 import { createSuperSubScript } from "../../CreateElement/createSuperSubScript";
 import { createTextContainer } from "../../CreateElement/createTextContainer";
@@ -15,6 +18,7 @@ export function handleInsert(range: Range, container: HTMLElement, event: InputE
     if (tryHandleCaretOrUnderscore(range, container, event)) return;
     if (tryHandleSlash(range, container, event)) return;
     if (tryHandleSqrt(range, container, event)) return;
+    if (tryHandleParenthesis(range, container, event)) return;
     tryReplaceWhiteSpace(range, container, event);
 }
 
@@ -38,6 +42,7 @@ function tryReplaceWhiteSpace(range: Range, container: HTMLElement, event: Input
         case CT.NUMERATOR:
         case CT.DENOMINATOR:
         case CT.SQRT_CONTAINER:
+        case CT.PARENTHESES_CONTAINER:
             {
                 let textContainer = createTextContainer(container.getAttribute(ATT.FONT_SIZE) as SZ);
                 container.innerText = '';
@@ -96,6 +101,10 @@ function tryHandleDollarSign(range: Range, container: HTMLElement, event: InputE
             splitContainers[0].insertAdjacentElement('afterend', formulaElement);
             formulaElement.insertAdjacentElement('afterend', splitContainers[1]);
             console.log('Splitted a text container!');
+        }
+        if (container.innerHTML == '&nbsp;')
+        {
+            container.remove();
         }
     }
     // set cursor
@@ -209,6 +218,247 @@ function tryHandleSqrt(range: Range, container: HTMLElement, event: InputEvent):
     let targetContainer = sqrt.lastElementChild!;
     range.setStart(targetContainer.firstChild!, 1);
     range.setEnd(targetContainer.firstChild!, 1);
+    return true;
+}
+function tryHandleParenthesis(range: Range, container: HTMLElement, event: InputEvent): boolean
+{
+    if (!['(', ')'].includes(event.data!)) return false;
+    console.log('Handle parenthesis triggered!');
+    event.preventDefault();
+    let parenthesisType = event.data == '('? ParenthesisType.LeftParenthesis: ParenthesisType.RightParenthesis;
+    if (!isType(container, CT.TEXTCONTAINER))
+    {
+        assert(container.innerHTML == '&nbsp;', 'The container should be empty.');
+        let textContainer = createTextContainer(getSize(container));
+        container.innerText = '';
+        container.appendChild(textContainer);
+        container = textContainer;
+    }
+    let parent = container.parentElement!;
+    while(isType(parent, CT.PARENTHESES_CONTAINER))
+    {
+        parent = parent.parentElement!;
+        assert(isType(parent, CT.PARENTHESES), 'Parent is supposed to be parentheses');
+        parent = parent.parentElement!;
+    }
+    let dummyParenthesis = createDummyParenthesis(parenthesisType, DummyTag.Create);
+    normalAndSplitInsert(range, container, dummyParenthesis);
+    let cursorAnchor = createCursorAnchor();
+    dummyParenthesis.insertAdjacentElement('afterend', cursorAnchor);
+    // break existing parenthesis pairs
+    let children = parent.children;
+    let newChildren: HTMLElement[] = [];
+    for (let index = 0; index < children.length; index++) {
+        let child = children[index] as HTMLElement;
+        if (isType(child, CT.PARENTHESES))
+        {
+            disassembleParentheses(child, newChildren);
+        }
+        else
+        {
+            newChildren.push(child);
+        }
+    }
+    
+    // debug code start
+    while(parent.firstElementChild!=null)
+    {
+        parent.removeChild(parent.firstElementChild);
+    }
+    for (let index = 0; index < newChildren.length; index++) {
+        let child = newChildren[index];
+        parent.appendChild(child);
+    }
+    // debug code end
+    setTimeout(()=>{
+    let done = false;
+    for (let index = 0; index < 10; index++) {
+        if (!tryCombineParentheses(newChildren, getSize(parent)))
+        {
+            done = true;
+            break;
+        }
+    }
+    assert(done, 'Recursion goes infinitely.');
+    // assign new children to parent
+    while(parent.firstElementChild!=null)
+    {
+        parent.removeChild(parent.firstElementChild);
+    }
+    for (let index = 0; index < newChildren.length; index++) {
+        let child = newChildren[index];
+        parent.appendChild(child);
+    }
+    let cursorAnchorSibling = cursorAnchor.nextElementSibling as HTMLElement;
+    let targetContainer: HTMLElement;
+    if (cursorAnchorSibling == null || !isType(cursorAnchorSibling, CT.TEXTCONTAINER))
+    {
+        let textContainer = createTextContainer(getSize(parent));
+        cursorAnchor.insertAdjacentElement('afterend', textContainer);
+        targetContainer = textContainer;
+    }
+    else
+    {
+        targetContainer = cursorAnchorSibling;
+    }
+    console.log(targetContainer);
+    range.setStart(targetContainer.firstChild!, 0);
+    range.setEnd(targetContainer.firstChild!, 0);
+    cursorAnchor.remove();
+    }, 200);
+    
+    return true;
+}
+function disassembleParentheses(parentheses: HTMLElement, newChildren: HTMLElement[])
+{
+    console.log('Disassembling parentheses!');
+    let parenthesesContainer = getParenthesesContainer(parentheses);
+    let parenthesesChildren = parenthesesContainer.children;
+    if (hasParenthesis(parentheses, ParenthesisType.LeftParenthesis))
+    {
+        let leftDummyParenthesis = createDummyParenthesis(ParenthesisType.LeftParenthesis, DummyTag.None);
+        newChildren.push(leftDummyParenthesis);
+    }
+    for (let index = 0; index < parenthesesChildren.length; index++) {
+        let child = parenthesesChildren[index] as HTMLElement;
+        if (isType(child, CT.PARENTHESES))
+        {
+            disassembleParentheses(child, newChildren);
+        }
+        else
+        {
+            newChildren.push(child);
+        }
+    }
+    if (isType(parentheses.lastElementChild as HTMLElement, CT.RIGHT_PARENTHESIS))
+    {
+        let rightDummyParenthesis = createDummyParenthesis(ParenthesisType.RightParenthesis, DummyTag.None);
+        newChildren.push(rightDummyParenthesis);
+    }
+}
+
+
+function tryCombineParentheses(children: HTMLElement[], size: SZ): boolean
+{
+    let leftCombined = tryCombineLastLeftParentheses(children, size);
+    if (!leftCombined)
+    {
+        let rightCombined = tryCombineRightParentheses(children, size);
+        if (!rightCombined)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+function tryCombineLastLeftParentheses(children: HTMLElement[], size: SZ): boolean
+{
+    let lastLeftDummyParenthesisIndex: number|null = null;
+    let firstRightAfterLastLeftDummyParenthesisIndex: number|null = null;
+    for (let index = children.length - 1; index >=0; index--) {
+        const child = children[index];
+        if (isType(child, CT.LEFT_DUMMY_PARENTHESIS))
+        {
+            lastLeftDummyParenthesisIndex = index;
+            break;
+        }
+    }
+    if (lastLeftDummyParenthesisIndex == null) return false;
+    for (let index = lastLeftDummyParenthesisIndex + 1; index < children.length; index++) {
+        let child = children[index];
+        if (isType(child, CT.RIGHT_DUMMY_PARENTHESIS))
+        {
+            firstRightAfterLastLeftDummyParenthesisIndex = index;
+            break;
+        }
+    }
+    let parentheses: HTMLElement;
+    if (firstRightAfterLastLeftDummyParenthesisIndex != null)
+    {
+        parentheses = createParentheses(size, ParenthesisType.Both);
+    }
+    else
+    {
+        parentheses = createParentheses(size, ParenthesisType.LeftParenthesis);
+        firstRightAfterLastLeftDummyParenthesisIndex = children.length;
+    }
+    let newChildren: HTMLElement[] = [];
+    for (let index = 0; index < lastLeftDummyParenthesisIndex; index++) {
+        let child = children[index];
+        newChildren.push(child);
+    }
+    let parenthesesContainer = getParenthesesContainer(parentheses);
+    parenthesesContainer.innerText = '';
+    if (lastLeftDummyParenthesisIndex + 1 < firstRightAfterLastLeftDummyParenthesisIndex)
+    {
+        for (let index = lastLeftDummyParenthesisIndex + 1;
+            index < firstRightAfterLastLeftDummyParenthesisIndex;
+            index++)
+        {
+            let child = children[index];
+            parenthesesContainer.appendChild(child);
+        }
+    }
+    else
+    {
+        let textContainer = createTextContainer(size);
+        parenthesesContainer.appendChild(textContainer);
+    }
+    newChildren.push(parentheses);
+    for (let index = firstRightAfterLastLeftDummyParenthesisIndex + 1;
+        index < children.length; index++)
+    {
+        let child = children[index];
+        newChildren.push(child);
+    }
+    for (let index = 0; index < newChildren.length; index++) {
+        let child = newChildren[index];
+        console.log(child);
+    }
+    children.length = 0;
+    for (let index = 0; index < newChildren.length; index++) {
+        let child = newChildren[index];
+        children.push(child);
+    }
+    return true;
+}
+function tryCombineRightParentheses(children: HTMLElement[], size: SZ): boolean
+{
+    console.log('Try combining right parentheses');
+    let rightParenthesisIndex: number|null = null;
+    for (let index = 0; index < children.length; index++) {
+        let child = children[index];
+        if (isType(child, CT.RIGHT_DUMMY_PARENTHESIS))
+        {
+            rightParenthesisIndex = index;
+            break;
+        }
+    }
+    if (rightParenthesisIndex == null)
+    {
+        console.log('Cannot find right parentheses');
+        return false;
+    }
+    let parentheses = createParentheses(size, ParenthesisType.RightParenthesis);
+    let parenthesesContainer = parentheses.firstElementChild as HTMLElement;
+    assert(isType(parenthesesContainer, CT.PARENTHESES_CONTAINER), 'This container should be parentheses container');
+    parenthesesContainer.innerText = '';
+    let newChildren: HTMLElement[]= [];
+    for (let index = 0; index < rightParenthesisIndex; index++){
+        let child = children[index];
+        parenthesesContainer.appendChild(child);
+    }
+    newChildren.push(parentheses);
+    for (let index = rightParenthesisIndex + 1; index < children.length; index++) {
+        let child = children[index];
+        newChildren.push(child);
+    }
+    children.length = 0;
+    for (let index = 0; index < newChildren.length; index++) {
+        let child = newChildren[index];
+        children.push(child);
+    }
     return true;
 }
 

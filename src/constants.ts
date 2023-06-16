@@ -23,6 +23,15 @@ export enum CT
     SQRT_HEAD='SQRT_HEAD',
     SQRT_HEAD_PLACEHOLDER = 'SQRT_HEAD_PLACEHOLDER',
     SQRT_CONTAINER='SQRT_CONTAINER',
+
+    PARENTHESES = 'PARENTHESES',
+    LEFT_PARENTHESIS = 'LEFT_PARENTHESIS',
+    RIGHT_PARENTHESIS = 'RIGHT_PARENTHESIS',
+    PARENTHESIS_PLACEHOLDER = 'PARENTHESIS_PLACEHOLDER',
+    PARENTHESES_CONTAINER = 'PARENTHESES_CONTAINER',
+
+    LEFT_DUMMY_PARENTHESIS = 'LEFT_DUMMY_PARENTHESIS',
+    RIGHT_DUMMY_PARENTHESIS = 'RIGHT_DUMMY_PARENTHESIS',
 }
 export enum SZ
 {
@@ -51,6 +60,14 @@ export enum CLASS
     SQRT_HEAD_PLACEHOLDER = 'sqrt-head-placeholder',
     SQRT_CONTAINER='sqrt-container',
 
+    PARENTHESES = 'parentheses',
+    LEFT_PARENTHESIS = 'left-parenthesis',
+    RIGHT_PARENTHESIS = 'right-parenthesis',
+    PARENTHESIS_PLACEHOLDER = 'parenthesis-placeholder',
+    PARENTHESES_CONTAINER = 'parentheses-container',
+
+    DUMMY_PARENTHESIS = 'dummy-parenthesis',
+
     FONT_SIZE_1='font-size-1',
     FONT_SIZE_2='font-size-2',
     FONT_SIZE_3='font-size-3',
@@ -72,5 +89,11 @@ export enum CLASS
     COLOR_SQRT_HEAD = 'sqrt-head-color',
     COLOR_SQRT_HEAD_PLACEHOLDER = 'sqrt-head-placeholder-color',
     COLOR_SQRT_CONTAINER = 'sqrt-container-color',
+    COLOR_PARENTHESES = 'parentheses-color',
+    COLOR_PARENTHESIS = 'parenthesis-color',
+    COLOR_PARENTHESIS_PLACEHOLDER = 'parenthesis-placeholder-color',
+    COLOR_PARENTHESES_CONTAINER = 'parentheses-container-color',
+    COLOR_DUMMY_PARENTHESIS = 'dummy-parenthesis-color',
+
     COLOR_NONE = 'transparent-color'
 }

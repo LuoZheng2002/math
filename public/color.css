@@ -47,3 +47,19 @@
 .sqrt-container-color{
     background-color: blue;
 }
+
+.parentheses-color{
+    background-color: pink;
+}
+.parenthesis-color{
+    background-color: red;
+}
+.parenthesis-placeholder-color{
+    background-color: black;
+}
+.parentheses-container-color{
+    background-color: aqua;
+}
+.dummy-parenthesis-color{
+    background-color: blueviolet;
+}

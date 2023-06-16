@@ -1,5 +1,6 @@
 import { createTextContainer } from "../../CreateElement/createTextContainer";
 import { ATT, CT, SZ } from "../../constants";
+import { assert } from "../../misc/assert";
 import { getSize, isType } from "../../misc/attributes";
 import { getBigContainer } from "../../misc/getBigContainer";
 import { Direction, setCursorToContainer } from "../../misc/setCursorToContainer";
@@ -20,6 +21,12 @@ export function handleArrow(range: Range, container: HTMLElement, event: Keyboar
         && !isType(sibling, CT.TEXTCONTAINER)))
     {
         let bigContainerParent = bigContainer!.parentElement!;
+        while(isType(bigContainerParent, CT.PARENTHESES_CONTAINER))
+        {
+            bigContainerParent = bigContainerParent.parentElement!;
+            assert(isType(bigContainerParent, CT.PARENTHESES), 'The container is supposed to be a parentieses');
+            bigContainerParent = bigContainerParent.parentElement!;
+        }
         let textContainer = createTextContainer(getSize(bigContainerParent));
         let position = direction == Direction.Left? 'beforebegin': 'afterend';
         bigContainer!.insertAdjacentElement(position as InsertPosition, textContainer);
@@ -30,6 +37,7 @@ export function handleArrow(range: Range, container: HTMLElement, event: Keyboar
     else if(sibling == null)
     {
         console.log('Touching border. Cannot go further');
+        return;
     }
     else
     {

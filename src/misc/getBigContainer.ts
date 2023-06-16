@@ -69,6 +69,12 @@ function getBigContainerExceptText(container: HTMLElement):HTMLElement|null
                 assert(isType(parent, CT.SQRT), 'Parent is supposed to be SQRT');
                 return parent;
             }
+        case CT.PARENTHESES_CONTAINER:
+            {
+                let parent = container.parentElement!;
+                assert(isType(parent, CT.PARENTHESES), 'Parent is supposed to be parentheses');
+                return parent;
+            }
         default:
             console.log('Returning null in getBigContainerExceptText, meaning there is situations like text container in div');
             return null;

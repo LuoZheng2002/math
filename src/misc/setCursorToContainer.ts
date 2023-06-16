@@ -1,3 +1,4 @@
+import { getParenthesesContainer } from "../CreateElement/createParentheses";
 import { createTextContainer } from "../CreateElement/createTextContainer";
 import { ATT, CT, SZ } from "../constants";
 import { assert } from "./assert";
@@ -15,17 +16,7 @@ export function setCursorToContainer(range: Range, container: HTMLElement, direc
     switch(container.getAttribute(ATT.CONTAINER_TYPE))
     {
         case CT.FORMULA:
-            if (container.innerHTML =='&nbsp;')
-            {
-                range.setStart(container.firstChild!, direction == Direction.Left?1:0);
-                range.setEnd(container.firstChild!, direction == Direction.Left?1:0);
-            }
-            else
-            {
-                let lastChild = container.lastElementChild as HTMLElement;
-                range.setStart(lastChild.firstChild!, direction == Direction.Left?lastChild.innerText.length:0);
-                range.setEnd(lastChild.firstChild!, direction == Direction.Left?lastChild.innerText.length:0);
-            }
+            setCursorToComplexContainer(range, container, direction);
             break;
         case CT.TEXTCONTAINER:
             console.log(container);
@@ -79,6 +70,12 @@ export function setCursorToContainer(range: Range, container: HTMLElement, direc
                 setCursorToComplexContainer(range, sqrtContainer, direction);
                 break;
             }
+        case CT.PARENTHESES:
+            {
+                let parenthesesContainer = getParenthesesContainer(container);
+                setCursorToComplexContainer(range, parenthesesContainer, direction);
+                break;
+            }
         default:
             assert(false, 'unknown container type');
     }
@@ -101,6 +98,12 @@ function setCursorToComplexContainer(range: Range, container: HTMLElement, direc
         else
         {
             subContainer = container.firstElementChild as HTMLElement;
+        }
+        while(isType(container, CT.PARENTHESES_CONTAINER))
+        {
+            container = container.parentElement!;
+            assert(isType(container, CT.PARENTHESES), 'The container is supposed to be a parentheses');
+            container = container.parentElement!;
         }
         if (!isType(subContainer, CT.TEXTCONTAINER))
         {
