@@ -19,7 +19,6 @@ export function setCursorToContainer(range: Range, container: HTMLElement, direc
             setCursorToComplexContainer(range, container, direction);
             break;
         case CT.TEXTCONTAINER:
-            console.log(container);
             range.setStart(container.firstChild!, direction == Direction.Left?container.innerText.length:0);
             range.setEnd(container.firstChild!, direction == Direction.Left?container.innerText.length:0);
             break;

@@ -309,7 +309,78 @@ function tryHandleParenthesis(range: Range, container: HTMLElement, event: Input
     
     return true;
 }
-function disassembleParentheses(parentheses: HTMLElement, newChildren: HTMLElement[])
+export function setCursorAfterAnchor(range: Range, cursorAnchor: HTMLElement, size: SZ)
+{
+    let cursorAnchorSibling = cursorAnchor.nextElementSibling as HTMLElement;
+    let targetContainer: HTMLElement;
+    if (cursorAnchorSibling == null || !isType(cursorAnchorSibling, CT.TEXTCONTAINER))
+    {
+        let textContainer = createTextContainer(size);
+        cursorAnchor.insertAdjacentElement('afterend', textContainer);
+        targetContainer = textContainer;
+    }
+    else
+    {
+        targetContainer = cursorAnchorSibling;
+    }
+    console.log(targetContainer);
+    range.setStart(targetContainer.firstChild!, 0);
+    range.setEnd(targetContainer.firstChild!, 0);
+    cursorAnchor.remove();
+}
+export function getParentExceptParentheses(container: HTMLElement): HTMLElement
+{
+    let parent = container.parentElement!;
+    while(isType(parent, CT.PARENTHESES_CONTAINER))
+    {
+        parent = parent.parentElement!;
+        assert(isType(parent, CT.PARENTHESES), 'Parent is supposed to be parentheses');
+        parent = parent.parentElement!;
+    }
+    return parent;
+}
+export function getFlattenedChildren(parent: HTMLElement): HTMLElement[]
+{
+    let children = parent.children;
+    let newChildren: HTMLElement[] = [];
+    for (let index = 0; index < children.length; index++) {
+        let child = children[index] as HTMLElement;
+        if (isType(child, CT.PARENTHESES))
+        {
+            disassembleParentheses(child, newChildren);
+        }
+        else
+        {
+            newChildren.push(child);
+        }
+    }
+    return newChildren;
+}
+export function retrieveFlattenedChildren(parent: HTMLElement, children: HTMLElement[])
+{
+    while(parent.firstElementChild!=null)
+    {
+        parent.removeChild(parent.firstElementChild);
+    }
+    for (let index = 0; index < children.length; index++) {
+        let child = children[index];
+        
+        parent.appendChild(child);
+    }
+}
+export function combineParentheses(flattenedChildren: HTMLElement[], size: SZ)
+{
+    let done = false;
+    for (let index = 0; index < 10; index++) {
+        if (!tryCombineParentheses(flattenedChildren, size))
+        {
+            done = true;
+            break;
+        }
+    }
+    assert(done, 'Recursion goes infinitely.');
+}
+export function disassembleParentheses(parentheses: HTMLElement, newChildren: HTMLElement[])
 {
     console.log('Disassembling parentheses!');
     let parenthesesContainer = getParenthesesContainer(parentheses);
@@ -338,7 +409,7 @@ function disassembleParentheses(parentheses: HTMLElement, newChildren: HTMLEleme
 }
 
 
-function tryCombineParentheses(children: HTMLElement[], size: SZ): boolean
+export function tryCombineParentheses(children: HTMLElement[], size: SZ): boolean
 {
     let leftCombined = tryCombineLastLeftParentheses(children, size);
     if (!leftCombined)

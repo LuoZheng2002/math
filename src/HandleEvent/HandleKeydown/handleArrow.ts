@@ -1,3 +1,4 @@
+import { ParenthesisType, hasParenthesis } from "../../CreateElement/createParentheses";
 import { createTextContainer } from "../../CreateElement/createTextContainer";
 import { ATT, CT, SZ } from "../../constants";
 import { assert } from "../../misc/assert";
@@ -14,8 +15,16 @@ export function handleArrow(range: Range, container: HTMLElement, event: Keyboar
         return;
     }
     event.preventDefault();
+    
     let sibling: HTMLElement = direction == Direction.Left? bigContainer!.previousElementSibling as HTMLElement: bigContainer.nextElementSibling as HTMLElement;
-    if ((sibling == null && !isType(bigContainer, CT.TEXTCONTAINER))
+    if (isType(bigContainer, CT.PARENTHESES)
+        && ((direction == Direction.Left && !hasParenthesis(bigContainer, ParenthesisType.LeftParenthesis))
+        || direction == Direction.Right && !hasParenthesis(bigContainer, ParenthesisType.RightParenthesis)))
+    {
+        event.preventDefault();
+        console.log('Prevent creating new text container because it is in a parentheses scope');
+    }
+    else if ((sibling == null && !isType(bigContainer, CT.TEXTCONTAINER))
         || ( sibling !=null
         && !isType(bigContainer, CT.TEXTCONTAINER)
         && !isType(sibling, CT.TEXTCONTAINER)))

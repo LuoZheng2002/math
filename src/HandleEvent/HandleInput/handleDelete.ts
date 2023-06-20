@@ -1,76 +1,189 @@
 import { addSyntheticLeadingComment, isTaggedTemplateExpression } from "../../../node_modules/typescript/lib/typescript";
+import { createCursorAnchor } from "../../CreateElement/createCursorAnchor";
+import { createDummyParenthesis } from "../../CreateElement/createDummyParenthesis";
+import { ParenthesisType, hasParenthesis } from "../../CreateElement/createParentheses";
+import { createTextContainer } from "../../CreateElement/createTextContainer";
 import { mergeTextContainers } from "../../CreateElement/mergeTextContainers";
-import { ATT, CT } from "../../constants";
+import { ATT, CT, SZ } from "../../constants";
 import { assert } from "../../misc/assert";
-import { isType } from "../../misc/attributes";
-import { deleteLastCharacter } from "../../misc/deleteLastCharacter";
+import { getSize, getType, isType } from "../../misc/attributes";
+import { getBigContainerExceptText } from "../../misc/getBigContainer";
 import { Direction, setCursorToContainer } from "../../misc/setCursorToContainer";
+import { combineParentheses, disassembleParentheses, getFlattenedChildren, getParentExceptParentheses, retrieveFlattenedChildren as retrieveChildren, setCursorAfterAnchor, tryCombineParentheses } from "./handleInsert";
 
 export function handleDelete(range: Range, container: HTMLElement, event: InputEvent)
 {
-    if (tryDeleteFront(range, container, event)) return;
-    if (tryDeleteContainer(range, container, event)) return;
-    if (tryCreateWhiteSpace(range, container, event)) return;
-    if (tryDeleteSqrt(range, container, event)) return;
+    // create white space or delete instantly
+    if(isType(container, CT.TEXTCONTAINER))
+    {
+        let parent = container.parentElement!;
+        let isContainerEmpty = container.innerHTML == '&nbsp;';
+        let isContainerLengthOne = container.innerText.length == 1;
+        let isStartOffsetOne = range.startOffset == 1;
+        let isStartOffsetZero = range.startOffset == 0;
+        let parentHasOnlyOneChild = parent.childElementCount == 1;
+        let isParentParenthesesContainer = isType(parent, CT.PARENTHESES_CONTAINER);
+        let leftIsLeftParenthesis = judgeLeftIsLeftParenthesis(range, container, event);
+        let leftIsRightParenthesis = judgeLeftIsRightParenthesis(range, container, event);
+        if (parentHasOnlyOneChild && (isContainerEmpty || (isContainerLengthOne && isStartOffsetOne)) && !isParentParenthesesContainer)
+        {
+            deleteTextContainer(range, container, event);
+        }
+        else if((isContainerEmpty || isStartOffsetZero) && (leftIsLeftParenthesis || leftIsRightParenthesis))
+        {
+            deleteParenthesis(range, container, event);
+        }
+        else if(isStartOffsetZero)
+        {
+            preventDeleteTextContainer(range, container, event);
+        }
+    }
+    else if(isType(container, CT.PARENTHESES_CONTAINER) && container.innerHTML == '&nbsp;')
+    {
+        deleteParenthesis(range, container, event);
+    }
+    else if(container.innerHTML == '&nbsp;')
+    {
+        deleteNonTextContainer(range, container, event);
+    }
 }
 
-function tryDeleteFront(range: Range, container: HTMLElement, event: InputEvent):boolean
+function judgeLeftIsLeftParenthesis(range: Range, container: HTMLElement, event: InputEvent): boolean
 {
-    if (range.startOffset != 0) return false;
     let parent = container.parentElement!;
-    let hasContainer= false;
-    let bigContainer :HTMLElement|null = null;
-    if (isType(parent, CT.SQRT_CONTAINER))
+    if (!isType(parent, CT.PARENTHESES_CONTAINER)) return false;
+    if (parent.firstElementChild != container) return false;
+    return hasParenthesis(parent.parentElement!, ParenthesisType.LeftParenthesis);
+}
+function judgeLeftIsRightParenthesis(range: Range, container: HTMLElement, event:InputEvent): boolean
+{
+    let leftSibling = container.previousElementSibling as HTMLElement;
+    if (leftSibling == null) return false;
+    if (isType(leftSibling, CT.PARENTHESES))
     {
-        console.log('Prevent deleting sqrt because there is still content');
-        event.preventDefault();
+        assert(hasParenthesis(leftSibling, ParenthesisType.RightParenthesis), 'The parentheses should have right parenthesis');
         return true;
     }
-    if (container.previousElementSibling != null)
-    {
-        bigContainer = container;
-        hasContainer = true;
-    }
-    else if (parent.firstChild == container && parent.previousElementSibling != null)
-    {
-        bigContainer = parent;
-        hasContainer = true;
-    }
-    if (!hasContainer)
-    {
-        event.preventDefault();
-        console.log('Prevent deleting front.');
-        return false;
-    }
-    event.preventDefault();
-    let leftSibling = bigContainer!.previousElementSibling as HTMLElement;
-    deleteLastCharacter(leftSibling);
-    setCursorToContainer(range, leftSibling, Direction.Left);
-    console.log('Set cursor to the previos element before deleting');
-    return true;
+    return false;
 }
 
-function tryDeleteContainer(range: Range, container: HTMLElement, event: InputEvent):boolean
+function deleteParenthesis(range: Range, container: HTMLElement, event: InputEvent)
 {
-    if (tryDeleteFormula(range, container, event)) return true;
-    if (tryDeleteMainDiv(range, container, event)) return true;
-    if (tryDeleteSuperSubScript(range, container, event)) return true;
-    if (tryDeleteFraction(range, container, event)) return true;
-    if (tryDeleteTextContainer(range, container, event)) return true;
-    return false;
-}
-function tryCreateWhiteSpace(range: Range, container: HTMLElement, event: InputEvent):boolean
-{
-    if (container.innerText.length == 1 && container.innerHTML !='&nbsp;' && range.startOffset == 1)
+    event.preventDefault();
+    let isParenthesisContainer = isType(container, CT.PARENTHESES_CONTAINER);
+    let parenthesesContainer: HTMLElement|null = null;
+    if (isParenthesisContainer)
     {
-        event.preventDefault();
-        container.innerHTML = '&nbsp;';
-        range.setStart(container, 1);
-        console.log('Created a white space.');
-        return true;
+        parenthesesContainer = container;
+        assert(isType(parenthesesContainer, CT.PARENTHESES_CONTAINER),'');
+        container = container.parentElement!;
+        assert(isType(container, CT.PARENTHESES), '');
     }
-    return false;
+    let parent = getParentExceptParentheses(container);
+    if (isParenthesisContainer)
+    {
+        let textContainer = createTextContainer(getSize(parent));
+        parenthesesContainer!.innerText = '';
+        parenthesesContainer!.appendChild(textContainer);
+        container = textContainer;
+    }
+    let cursorAnchor = createCursorAnchor();
+    container.insertAdjacentElement('beforebegin', cursorAnchor);
+    // break existing parenthesis pairs
+    let flattenedChildren = getFlattenedChildren(parent);
+    deleteDummyParenthesisBeforeAnchor(flattenedChildren);
+    // debug code start
+    retrieveChildren(parent, flattenedChildren);
+    // debug code end
+    setTimeout(()=>{
+        combineParentheses(flattenedChildren, getSize(parent));
+        // assign new children to parent
+        retrieveChildren(parent, flattenedChildren);
+        setCursorAfterAnchor(range, cursorAnchor, getSize(parent));
+    }, 200);
 }
+
+function deleteDummyParenthesisBeforeAnchor(flattenedChildren: HTMLElement[])
+{
+    flattenedChildren.forEach(element => {
+        console.log(element);
+    });
+    let cursorAnchorIndex = flattenedChildren.findIndex((child)=>{return isType(child, CT.CURSOR_ANCHOR)});
+    assert(cursorAnchorIndex != -1, 'Cannot find anchor.');
+    let dummyParenthesis = flattenedChildren[cursorAnchorIndex - 1];
+    assert(isType(dummyParenthesis, CT.LEFT_DUMMY_PARENTHESIS)
+        || isType(dummyParenthesis, CT.RIGHT_DUMMY_PARENTHESIS),'The previous child should be dummy parenthesis');
+    flattenedChildren.splice(cursorAnchorIndex - 1, 1);
+}
+
+function deleteTextContainer(range: Range, container: HTMLElement, event: InputEvent)
+{
+    event.preventDefault();
+    normalAndMergeDelete(range, container);
+}
+function preventDeleteTextContainer(range: Range, container: HTMLElement, event: InputEvent)
+{
+    event.preventDefault();
+    container.innerHTML = '&nbsp;';
+    console.log('create a white space and prevent deleting.');      
+}
+function deleteNonTextContainer(range: Range, container: HTMLElement, event: InputEvent)
+{
+    event.preventDefault();
+        let bigContainer = getBigContainerExceptText(container)!;
+        assert(bigContainer!=null, 'Big container should not be null');
+        switch(getType(bigContainer))
+        {
+            case CT.MAINDIV:
+                console.log('Prevent deleting the main div.');
+                break;
+            case CT.FORMULA:
+            case CT.SQRT:
+                if (container.innerHTML == '&nbsp;')
+                {
+                    normalAndMergeDelete(range, bigContainer);
+                }
+                else
+                {
+                    console.log('Cannot delete sqrt because there is still contents');
+                }
+                break;
+            case CT.SUPERSUBSCRIPT:
+                {
+                    let superScript = bigContainer.firstElementChild!;
+                    let subScript = bigContainer.lastElementChild!;
+                    if (superScript.innerHTML !='&nbsp;' || subScript.innerHTML !='&nbsp;')
+                    {
+                        console.log('Because either superscript or subscript is not empty, delete is prevented.');
+                    }
+                    else
+                    {
+                        normalAndMergeDelete(range, bigContainer);
+                    }
+                    break;
+                }
+            case CT.FRACTION:
+                {
+                    let numerator = bigContainer.firstElementChild!.firstElementChild as HTMLElement;
+                    assert(isType(numerator, CT.NUMERATOR), 'The container is supposed to be a numerator');
+                    let denominator = bigContainer.lastElementChild!.firstElementChild as HTMLElement;
+                    assert(isType(denominator, CT.DENOMINATOR), 'The container is supposed to be a denominator');
+                    if (numerator.innerHTML !='&nbsp;' || denominator.innerHTML !='&nbsp;')
+                    {
+                        console.log('Because either numerator or denominator is not empty, delete is prevented.');
+                    }
+                    else
+                    {
+                        normalAndMergeDelete(range, bigContainer);
+                    }
+                    break;
+                }
+            default:
+                assert(false,' Unknown big container type');
+                break;
+        }
+}
+
 function createWhiteSpaceForParent(range: Range, parent: HTMLElement)
 {
     assert(parent != null, 'parent is null');
@@ -86,120 +199,7 @@ function tryDeleteFormula(range: Range, container: HTMLElement, event: InputEven
     normalAndMergeDelete(range, container);
     return true;
 }
-function tryDeleteMainDiv(range: Range, container: HTMLElement, event: InputEvent): boolean
-{
-    if (container.getAttribute(ATT.CONTAINER_TYPE) != CT.MAINDIV) return false;
-    if (container.innerHTML != '&nbsp;') return false;
-    event.preventDefault();
-    console.log('Prevent deleting the main div');
-    return true;
-}
-function tryDeleteTextContainer(range: Range, container: HTMLElement, event: InputEvent): boolean
-{
-    if (container.getAttribute(ATT.CONTAINER_TYPE) != CT.TEXTCONTAINER) return false;
-    // if the text container only contains one character, and its parent is formula and has only one child, then delete the container and set the formula to be a white space
-    let parent = container.parentElement!;
-    let parentTypes:string[] = [CT.FORMULA, CT.SUPERSCRIPT, CT.SUBSCRIPT, CT.NUMERATOR, CT.DENOMINATOR, CT.SQRT_CONTAINER];
-    let isWhiteSpace = container.innerHTML== '&nbsp;';
-    let isOnlyChildElement = container.innerText.length == 1
-        && parentTypes.includes(parent.getAttribute(ATT.CONTAINER_TYPE)!)
-        && parent.childElementCount == 1
-        && range.startOffset == 1;
-    if (!isWhiteSpace && !isOnlyChildElement) return false;
-    event.preventDefault();
-    let cursorIsSet = setCursorToAdjacentContainer(range, container);
-    container.remove();
-    if (!cursorIsSet) createWhiteSpaceForParent(range, parent);
-    console.log('Removed a text container.');
-    return true;
-}
 
-function setCursorToAdjacentContainer(range: Range, container: HTMLElement):boolean
-{
-    let parentContainer = container.parentElement!;
-    assert(parentContainer!=null, 'parent container does not exist.');
-    let adjacentElement: HTMLElement | null = null;
-    let leftElement = container.previousElementSibling as HTMLElement;
-    let rightElement = container.nextElementSibling as HTMLElement;
-    let direction: Direction = Direction.Left;
-    if (leftElement!=null)
-    {
-        adjacentElement = leftElement;
-        direction = Direction.Left;
-    }
-    else if(rightElement != null)
-    {
-        adjacentElement = rightElement;
-        direction = Direction.Right;
-    }
-    if (adjacentElement!=null)
-    {
-        setCursorToContainer(range, adjacentElement, direction);
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-function tryDeleteSuperSubScript(range: Range, container: HTMLElement, event: InputEvent)
-{
-    if (container.innerHTML != '&nbsp;') return false;
-    if (container.getAttribute(ATT.CONTAINER_TYPE) == CT.TEXTCONTAINER)
-    {
-        container = container.parentElement!;
-    }
-    if (![CT.SUPERSCRIPT, CT.SUBSCRIPT].includes(container.getAttribute(ATT.CONTAINER_TYPE) as CT)) return false;
-    event.preventDefault();
-    let superSubScript = container.parentElement!;
-    let superScript = superSubScript.firstElementChild!;
-    let subScript = superSubScript.lastElementChild!;
-    if (superScript.innerHTML !='&nbsp;' || subScript.innerHTML !='&nbsp;')
-    {
-        console.log('Because either superscript or subscript is not empty, delete is prevented.');
-        return false;
-    }
-    normalAndMergeDelete(range, superSubScript);
-    return true;
-}
-
-function tryDeleteFraction(range: Range, container: HTMLElement, event: InputEvent): boolean
-{
-    if (container.innerHTML != '&nbsp;') return false;
-    if (container.getAttribute(ATT.CONTAINER_TYPE) == CT.TEXTCONTAINER)
-    {
-        container = container.parentElement!;
-    }
-    if (![CT.NUMERATOR, CT.DENOMINATOR].includes(container.getAttribute(ATT.CONTAINER_TYPE) as CT)) return false;
-    event.preventDefault();
-    let framework = container.parentElement!;
-    assert(isType(framework, CT.NUMERATOR_FRAEMWORK) || isType(framework, CT.DENOMINATOR_FRAMEWOKR), 'The container is supposed to be a framework.');
-    let fraction = framework.parentElement!;
-    assert(isType(fraction, CT.FRACTION), 'The container is supposed to be a fraction.');
-    let numerator = fraction.firstElementChild!.firstElementChild as HTMLElement;
-    assert(isType(numerator, CT.NUMERATOR), 'The container is supposed to be a numerator');
-    let denominator = fraction.lastElementChild!.firstElementChild as HTMLElement;
-    assert(isType(denominator, CT.DENOMINATOR), 'The container is supposed to be a denominator');
-    if (numerator.innerHTML !='&nbsp;' || denominator.innerHTML !='&nbsp;')
-    {
-        console.log('Because either numerator or denominator is not empty, delete is prevented.');
-        return false;
-    }
-    normalAndMergeDelete(range, fraction);
-    return true;
-}
-
-function tryDeleteSqrt(range: Range, container: HTMLElement, event: InputEvent): boolean
-{
-    if (container.innerHTML != '&nbsp;') return false;
-    if (!isType(container, CT.SQRT_CONTAINER)) return false;
-    event.preventDefault();
-    let sqrt = container.parentElement!;
-    assert(isType(sqrt, CT.SQRT), 'Parent should be SQRT');
-    normalAndMergeDelete(range, sqrt);
-    return true;
-}
 
 function normalAndMergeDelete(range: Range, container: HTMLElement)
 {

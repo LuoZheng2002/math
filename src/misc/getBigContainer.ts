@@ -1,4 +1,3 @@
-import { parseJsonText } from "../../node_modules/typescript/lib/typescript";
 import { ATT, CT } from "../constants";
 import { assert } from "./assert";
 import { isType } from "./attributes";
@@ -25,23 +24,19 @@ export function getBigContainer(range:Range, container: HTMLElement, direction: 
         else
         {
             let bigContainer = getBigContainerExceptText(parent);
-            if (bigContainer == null)
-            {
-                return container;
-            }
-            else
-            {
-                return bigContainer;
-            }
+            assert(bigContainer != null, 'Big container is not supposed to be null');
+            return bigContainer;
         }
     }
     else
     {
-        return getBigContainerExceptText(container);
+        let bigContainer = getBigContainerExceptText(container);
+        assert(bigContainer != null, 'Big container is not supposed to be null');
+        return bigContainer;
     }
 }
 
-function getBigContainerExceptText(container: HTMLElement):HTMLElement|null
+export function getBigContainerExceptText(container: HTMLElement):HTMLElement|null
 {
     switch(container.getAttribute(ATT.CONTAINER_TYPE))
     {
@@ -62,6 +57,8 @@ function getBigContainerExceptText(container: HTMLElement):HTMLElement|null
                 return parent2;
             }
         case CT.FORMULA:
+            return container;
+        case CT.MAINDIV:
             return container;
         case CT.SQRT_CONTAINER:
             {

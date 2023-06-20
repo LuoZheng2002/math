@@ -11,6 +11,10 @@ export function handleInput(event: InputEvent)
     let container = getHTMLContainer(range.startContainer);
     switch(event.inputType)
     {
+        case 'deleteContentForward':
+            console.log('Delete is not supported');
+            event.preventDefault();
+            break;
         case 'deleteContentBackward':
             handleDelete(range, container, event);
             break;
